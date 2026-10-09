@@ -4,7 +4,7 @@ An automated, lightweight Bash script designed for targeted reconnaissance. The 
 
 ---
 
-## 🚀 Workflow & Features
+## Workflow & Features
 
 1. **Subdomain Enumeration & Fallback Strategy:**
    * **Passive Discovery:** Fetches subdomains directly from `crt.sh` using SSL/TLS certificate logs and filters unique subdomains.
@@ -25,7 +25,7 @@ An automated, lightweight Bash script designed for targeted reconnaissance. The 
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Ensure the following core system utilities and tools are installed on your Linux environment (e.g., Kali Linux, Debian, or Ubuntu):
 
@@ -41,7 +41,7 @@ sudo apt install curl jq sed grep awk dnsutils -y
 
 ---
 
-## 🛠️ Usage
+## Usage
 
 1. **Grant execution permission:**
    ```bash
@@ -59,7 +59,7 @@ sudo apt install curl jq sed grep awk dnsutils -y
 
 ---
 
-## 📂 Output Directory Structure
+## Output Directory Structure
 
 The script organizes all output into a domain-specific workspace (`target-<domain>/`):
 
