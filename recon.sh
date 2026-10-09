@@ -77,19 +77,40 @@ if [[ -f "$folder/all_subdomains.txt" && -s "$folder/all_subdomains.txt" ]]; the
         echo -e "\n[+] Starting DNS Enumeration (dig)..."
         while read -r sub; do
                 clean_sub=$(echo "$sub" | sed -e 's|^[^:]*://||' -e 's|/.*$||')
+                
                 cname=$(dig +short CNAME "$clean_sub")
                 ips=$(dig +short A "$clean_sub")
-                is_cf="No"
-                if echo "$ips" | grep -qE '^104\.(1[6-9]|2[0-9]|3[0-1])\.|^172\.(6[4-9]|7[0-1])\.|^162\.158\.|^198\.41\.|^173\.245\.|^108\.162\.|^190\.93\.|^188\.114\.|^197\.234\.|^108\.177\.|^141\.101\.|^103\.21\.|^103\.22\.|^103\.31\.'; then
-                        is_cf="Yes (Cloudflare IP Range)"
+                
+                first_ip=$(echo "$ips" | grep -v '\.$' | head -n1)
+                provider="Unknown / No A Record"
+
+                if [[ -n "$first_ip" ]]; then
+                        raw_whois=$(timeout 3 whois "$first_ip" 2>/dev/null)
+                        provider=$(echo "$raw_whois" | grep -iE 'org-name|orgname|netname|owner|descr' | head -n1 | awk -F':' '{print $2}' | xargs)
+                        
+                        if [[ -z "$provider" ]]; then
+                                provider="Provider Data Unavailable"
+                        fi
                 fi
+
                 if [[ -n "$cname" ]]; then
                         echo "$clean_sub CNAME -> $cname" >> "$folder/$folderDNS/cnames.txt"
                 fi
-                echo "$clean_sub | IPs: $(echo $ips | tr '\n' ' ') | Cloudflare: $is_cf" >> "$folder/$folderDNS/dns_summary.txt"
+                
+                echo "$clean_sub | IPs: $(echo $ips | tr '\n' ' ') | Provider: $provider" >> "$folder/$folderDNS/dns_summary.txt"
+
         done < "$folder/all_subdomains.txt"
+
         echo "[+] DNS Analysis Completed:"
         echo "   ├── CNAME Records: $folder/$folderDNS/cnames.txt"
-        echo "   └── Full DNS & WAF Summary: $folder/$folderDNS/dns_summary.txt"
+        echo "   └── Full DNS & Provider Summary: $folder/$folderDNS/dns_summary.txt"
+
+        if [[ -f "$folder/$folderDNS/dns_summary.txt" ]]; then
+                echo -e "\n[+] Top Identified Infrastructure Providers:"
+                awk -F'| Provider: ' 'NF>1 {print $2}' "$folder/$folderDNS/dns_summary.txt" | sort | uniq -c | sort -nr | head -n 5 | while read -r count name; do
+                        echo "   ├── $name: $count subdomain(s)"
+                done
+        fi
 else
         echo -e "[+] No subdomains found to process with httpx."
+fi
